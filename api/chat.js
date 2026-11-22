@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-const apiKey = process.env.GEMINI_API_KEY?.trim();
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) {
     return res.status(500).json({ error: "Missing GEMINI_API_KEY" });
   }
@@ -23,58 +23,57 @@ const apiKey = process.env.GEMINI_API_KEY?.trim();
       ]
     };
 
-   const models = [
-  "gemini-2.5-flash",
-  "gemini-2.5-flash-lite",
-  "gemini-2.0-flash"
-];
+    const models = [
+      "gemini-2.5-flash",
+      "gemini-2.5-flash-lite",
+      "gemini-2.0-flash"
+    ];
 
-let data = null;
-let lastError = null;
+    let data = null;
+    let lastError = null;
 
-for (const model of models) {
-  const response = await fetch(
-    `https://googleapis.com{model}:generateContent`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey
-      },
-      body: JSON.stringify({
-        system_instruction: systemInstruction,
-        contents: history
-      })
+    for (const model of models) {
+      const response = await fetch(
+        `https://googleapis.com{model}:generateContent`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": apiKey
+          },
+          body: JSON.stringify({
+            system_instruction: systemInstruction,
+            contents: history
+          })
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok) {
+        data = result;
+        break;
+      }
+
+      lastError = result;
+      if (response.status !== 503 && response.status !== 404) {
+        break;
+      }
     }
-  );
 
-  const result = await response.json();
-
-  if (response.ok) {
-    data = result;
-    break;
-  }
-
-  lastError = result;
-  if (response.status !== 503 && response.status !== 404) {
-    break;
-  }
-}
-
-if (!data) {
-  return res.status(503).json({
-    error: "AI companion is taking a short breath due to high traffic. Please try again in a few seconds.",
-    details: lastError
-  });
-}
-
+    if (!data) {
+      return res.status(503).json({
+        error: "AI companion is taking a short breath due to high traffic. Please try again in a few seconds.",
+        details: lastError
+      });
+    }
 
     const reply =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
       "I'm here with you. Could you tell me a little more about how you're feeling?";
 
     return res.status(200).json({ reply });
-    } catch (err) {
+  } catch (err) {
     console.error(err);
     return res.status(500).json({ error: err.message });
   }
