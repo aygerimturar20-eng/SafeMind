@@ -34,7 +34,7 @@ export default async function handler(req, res) {
 
     for (const model of models) {
       const response = await fetch(
-        "https://googleapis.com" + model + ":generateContent",
+        "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent",
         {
           method: "POST",
           headers: {
